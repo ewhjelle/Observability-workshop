@@ -1,0 +1,74 @@
+name: observability
+services:
+  frontend:
+        build:
+            context: .
+            dockerfile: frontend.Dockerfile
+        depends_on:
+            otel-lgtm:
+                condition: service_healthy
+                required: true
+        environment:
+            OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+            OTEL_METRIC_EXPORT_INTERVAL: "5000"
+            OTEL_SERVICE_NAME: frontend
+            SERVICE_ONE_ENDPOINT: http://one:5001
+        ports:
+            - target: 5000
+              published: "22353"
+  one:
+        build:
+            context: .
+            dockerfile: serviceOne.Dockerfile
+        depends_on:
+            otel-lgtm:
+                condition: service_healthy
+                required: true
+        environment:
+            OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+            OTEL_METRIC_EXPORT_INTERVAL: "5000"
+            OTEL_SERVICE_NAME: serviceOne
+            SERVICE_TWO_ENDPOINT: http://two:5002
+  two:
+        build:
+            context: .
+            dockerfile: serviceTwo.Dockerfile
+        depends_on:
+            otel-lgtm:
+                condition: service_healthy
+                required: true
+        environment:
+            OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+            OTEL_METRIC_EXPORT_INTERVAL: "5000"
+            OTEL_SERVICE_NAME: serviceTwo
+            SERVICE_THREE_ENDPOINT: http://three:5003
+  three:
+        build:
+            context: .
+            dockerfile: serviceThree.Dockerfile
+        depends_on:
+            otel-lgtm:
+                condition: service_healthy
+                required: true
+        environment:
+            OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+            OTEL_METRIC_EXPORT_INTERVAL: "5000"
+            OTEL_SERVICE_NAME: serviceThree
+  otel-lgtm:
+        healthcheck:
+            test:
+                - CMD
+                - curl
+                - -f
+                - http://localhost:3000/health
+            timeout: 10s
+            interval: 10s
+            retries: 5
+        image: grafana/otel-lgtm
+        ports:
+            - target: 3000
+              published: "22358"
+            - target: 4317
+              published: "22359"
+            - target: 4318
+              published: "22357"
